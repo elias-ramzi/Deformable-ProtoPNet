@@ -1,0 +1,17 @@
+torch==1.8.1
+torchvision==0.9.1
+pillow
+numpy
+opencv-python
+
+matplotlib
+ipython
+jupyter
+
+# dev
+ipdb
+flake8
+autopep8
+pylint
+isort
+pytest

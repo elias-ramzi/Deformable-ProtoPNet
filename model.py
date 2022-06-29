@@ -5,8 +5,10 @@ import torch.nn.functional as F
 
 from resnet_features import resnet18_features, resnet34_features, resnet50_features, resnet101_features, resnet152_features
 from densenet_features import densenet121_features, densenet161_features, densenet169_features, densenet201_features
-from vgg_features import vgg11_features, vgg11_bn_features, vgg13_features, vgg13_bn_features, vgg16_features, vgg16_bn_features,\
-                         vgg19_features, vgg19_bn_features
+from vgg_features import (
+    vgg11_features, vgg11_bn_features, vgg13_features, vgg13_bn_features, vgg16_features, vgg16_bn_features,
+    vgg19_features, vgg19_bn_features
+)
 
 from receptive_field import compute_proto_layer_rf_info_v2
 
@@ -32,9 +34,10 @@ base_architecture_to_features = {'resnet18': resnet18_features,
                                  'vgg19': vgg19_features,
                                  'vgg19_bn': vgg19_bn_features}
 
+
 class PPNet(nn.Module):
 
-    def __init__(self, features, img_size, prototype_shape, 
+    def __init__(self, features, img_size, prototype_shape,
                  proto_layer_rf_info, num_classes, topk_k=1,
                  m=None, init_weights=True, add_on_layers_type='bottleneck', using_deform=True,
                  incorrect_class_connection=-1, deformable_conv_hidden_channels=0, prototype_dilation=2):
@@ -113,8 +116,8 @@ class PPNet(nn.Module):
                 nn.ReLU(),
                 nn.Conv2d(in_channels=self.prototype_shape[1], out_channels=self.prototype_shape[1], kernel_size=1),
                 nn.Sigmoid()
-                )
-        
+            )
+
         self.prototype_vectors = nn.Parameter(torch.rand(self.prototype_shape),
                                               requires_grad=True)
 
@@ -126,35 +129,40 @@ class PPNet(nn.Module):
         self.ones = nn.Parameter(torch.ones(self.prototype_shape),
                                  requires_grad=False)
 
-
         # The convolution used to produce offsets for deformation
         # Add one to the number of channels to account for epsilon channel
         if not self.deformable_conv_hidden_channels:
-            conv_offset_1 = nn.Conv2d(self.prototype_shape[-3] + self.n_eps_channels,
-                                            self.deformable_conv_out_channels,
-                                            kernel_size=(self.prototype_shape[-2]+1, self.prototype_shape[-1]+1),
-                                            stride=(1, 1),
-                                            padding=(1, 1),
-                                            dilation=(1, 1),
-                                            bias=False)
+            conv_offset_1 = nn.Conv2d(
+                self.prototype_shape[-3] + self.n_eps_channels,
+                self.deformable_conv_out_channels,
+                kernel_size=(self.prototype_shape[-2]+1, self.prototype_shape[-1]+1),
+                stride=(1, 1),
+                padding=(1, 1),
+                dilation=(1, 1),
+                bias=False,
+            )
             self.conv_offset = nn.Sequential(conv_offset_1)
         else:
-            conv_offset_1 = nn.Conv2d(self.prototype_shape[-3] + self.n_eps_channels,
-                                            self.deformable_conv_hidden_channels,
-                                            kernel_size=(self.prototype_shape[-2]+2, self.prototype_shape[-1]+2),
-                                            stride=(1, 1),
-                                            padding=(1, 1),
-                                            dilation=(1, 1),
-                                            bias=True)
+            conv_offset_1 = nn.Conv2d(
+                self.prototype_shape[-3] + self.n_eps_channels,
+                self.deformable_conv_hidden_channels,
+                kernel_size=(self.prototype_shape[-2]+2, self.prototype_shape[-1]+2),
+                stride=(1, 1),
+                padding=(1, 1),
+                dilation=(1, 1),
+                bias=True,
+            )
             non_lin = nn.ReLU()
-            conv_offset_2 = nn.Conv2d(self.deformable_conv_hidden_channels,
-                                            self.deformable_conv_out_channels,
-                                            kernel_size=(self.prototype_shape[-2], self.prototype_shape[-1]),
-                                            stride=(1, 1),
-                                            padding=(1, 1),
-                                            dilation=(1, 1),
-                                            bias=True)
-                                            
+            conv_offset_2 = nn.Conv2d(
+                self.deformable_conv_hidden_channels,
+                self.deformable_conv_out_channels,
+                kernel_size=(self.prototype_shape[-2], self.prototype_shape[-1]),
+                stride=(1, 1),
+                padding=(1, 1),
+                dilation=(1, 1),
+                bias=True,
+            )
+
             self.conv_offset = nn.Sequential(conv_offset_1, non_lin, conv_offset_2)
 
         for p in self.conv_offset.modules():
@@ -163,8 +171,11 @@ class PPNet(nn.Module):
                 if p.bias is not None:
                     torch.nn.init.zeros_(p.bias)
 
-        self.last_layer = nn.Linear(self.num_prototypes, self.num_classes,
-                                    bias=False) # do not use bias
+        self.last_layer = nn.Linear(
+            self.num_prototypes,
+            self.num_classes,
+            bias=False,  # do not use bias
+        )
 
         if init_weights:
             self._initialize_weights()
@@ -177,8 +188,7 @@ class PPNet(nn.Module):
         x = self.add_on_layers(x_feat)
         return x
 
-    def cos_activation(self, x, is_train=True, 
-                        prototypes_of_wrong_class=None):
+    def cos_activation(self, x, is_train=True, prototypes_of_wrong_class=None):
         '''
         Takes convolutional features and gives arc distance as in
         https://arxiv.org/pdf/1801.07698.pdf
@@ -201,7 +211,7 @@ class PPNet(nn.Module):
         # Normalize each 1 x 1 x latent piece to size s=64
         x_length = torch.sqrt(torch.sum(torch.square(x), dim=-3) + self.epsilon_val)
         x_length = x_length.view(x_length.size()[0], 1, x_length.size()[1], x_length.size()[2])
-        x_normalized = input_vector_length * x / x_length 
+        x_normalized = input_vector_length * x / x_length
         x_normalized = x_normalized / normalizing_factor
 
         # Similarly, append an additional channel of value epsilon to prototypes
@@ -212,10 +222,11 @@ class PPNet(nn.Module):
 
         # We normalize prototypes to unit length
         prototype_vector_length = torch.sqrt(torch.sum(torch.square(appended_protos), dim=-3) + self.epsilon_val)
-        prototype_vector_length = prototype_vector_length.view(prototype_vector_length.size()[0], 
-                                                                1,
-                                                                prototype_vector_length.size()[1],
-                                                                prototype_vector_length.size()[2])
+        prototype_vector_length = prototype_vector_length.view(
+            prototype_vector_length.size()[0],
+            1,
+            prototype_vector_length.size()[1],
+            prototype_vector_length.size()[2])
         normalized_prototypes = appended_protos / (prototype_vector_length + self.epsilon_val)
         normalized_prototypes = normalized_prototypes / normalizing_factor
 
@@ -223,21 +234,23 @@ class PPNet(nn.Module):
         offset = self.conv_offset(x_normalized)
 
         if self.using_deform:
-            activations_dot = NormPreserveDeformConvFunction.apply(x_normalized, offset, 
-                                                                normalized_prototypes, 
-                                                                torch.zeros(self.prototype_shape[0]).cuda(), #bias
-                                                                (1, 1), #stride
-                                                                self.prototype_padding, #padding
-                                                                prototype_dilation, #dilation
-                                                                1, #groups
-                                                                1, #deformable_groups
-                                                                1, #im2col_step
-                                                                True) #zero_padding
+            activations_dot = NormPreserveDeformConvFunction.apply(
+                x_normalized, offset,
+                normalized_prototypes,
+                torch.zeros(self.prototype_shape[0]).cuda(),  # bias
+                (1, 1),  # stride
+                self.prototype_padding,  # padding
+                prototype_dilation,  # dilation
+                1,  # groups
+                1,  # deformable_groups
+                1,  # im2col_step
+                True,  # zero_padding
+            )
         else:
             activations_dot = F.conv2d(x_normalized, normalized_prototypes)
 
         marginless_activations = activations_dot / (input_vector_length * 1.01)
-        if self.m == None or not is_train or prototypes_of_wrong_class == None:
+        if self.m is None or not is_train or prototypes_of_wrong_class is None:
             # If no margin is used
             activations = marginless_activations
         else:
@@ -252,7 +265,7 @@ class PPNet(nn.Module):
         if self.relu_on_cos:
             activations = torch.relu(activations)
             marginless_activations = torch.relu(marginless_activations)
-            
+
         return activations, marginless_activations
 
     def prototype_activations(self, x, is_train=True, prototypes_of_wrong_class=None):
@@ -260,13 +273,15 @@ class PPNet(nn.Module):
         x is the raw input
         '''
         conv_features = self.conv_features(x)
-        activations, marginless_activations = self.cos_activation(conv_features, is_train=is_train, 
-                                                        prototypes_of_wrong_class=prototypes_of_wrong_class)
+        activations, marginless_activations = self.cos_activation(
+            conv_features, is_train=is_train,
+            prototypes_of_wrong_class=prototypes_of_wrong_class)
         return activations, [marginless_activations, conv_features]
 
     def forward(self, x, is_train=True, prototypes_of_wrong_class=None):
-        activations, additional_returns = self.prototype_activations(x, is_train=is_train, 
-                                                prototypes_of_wrong_class=prototypes_of_wrong_class)
+        activations, additional_returns = self.prototype_activations(
+            x, is_train=is_train,
+            prototypes_of_wrong_class=prototypes_of_wrong_class)
         marginless_activations = additional_returns[0]
         conv_features = additional_returns[1]
         if is_train:
@@ -280,9 +295,9 @@ class PPNet(nn.Module):
         topk_activations, _ = torch.topk(activations, topk_k, dim=-1)
         mean_activations = torch.mean(topk_activations, dim=-1)
 
-        marginless_max_activations = F.max_pool2d(marginless_activations,
-                                      kernel_size=(marginless_activations.size()[2],
-                                                   marginless_activations.size()[3]))
+        marginless_max_activations = F.max_pool2d(
+            marginless_activations,
+            kernel_size=(marginless_activations.size()[2], marginless_activations.size()[3]))
         marginless_max_activations = marginless_max_activations.view(-1, self.num_prototypes)
 
         logits = self.last_layer(mean_activations)
@@ -297,20 +312,20 @@ class PPNet(nn.Module):
 
     '''
     Computes keypoint-wise orthogonality loss, ie encourage each piece
-    of a prototype to be orthogonal to the others. Inspired by 
+    of a prototype to be orthogonal to the others. Inspired by
     https://openaccess.thecvf.com/content/ICCV2021/papers/Wang_Interpretable_Image_Recognition_by_Constructing_Transparent_Embedding_Space_ICCV_2021_paper.pdf
     '''
     def get_prototype_orthogonalities(self):
         # We normalize prototypes to unit length
         prototype_vector_length = torch.sqrt(torch.sum(torch.square(self.prototype_vectors), dim=-3) + self.epsilon_val)
-        prototype_vector_length = prototype_vector_length.view(prototype_vector_length.size()[0], 
+        prototype_vector_length = prototype_vector_length.view(prototype_vector_length.size()[0],
                                                                 1,
                                                                 prototype_vector_length.size()[1],
                                                                 prototype_vector_length.size()[2])
         normalized_prototypes = self.prototype_vectors / (prototype_vector_length + self.epsilon_val)
 
         # Reshape such that we have protos_per_class x total_parts_per_class x channel
-        prototype_piece_matrices = normalized_prototypes.view(self.num_prototypes_per_class, 
+        prototype_piece_matrices = normalized_prototypes.view(self.num_prototypes_per_class,
                                                             self.num_prototypes // self.num_prototypes_per_class,
                                                             self.prototype_shape[-3],
                                                             self.prototype_shape[-2]*self.prototype_shape[-1])
@@ -318,7 +333,7 @@ class PPNet(nn.Module):
                                                                                     -1,
                                                                                     self.prototype_shape[-3])
         prototype_piece_matrices = prototype_piece_matrices.transpose(1,2)
-        
+
         orthogonalities = torch.matmul(prototype_piece_matrices.transpose(-2,-1), prototype_piece_matrices)
         orthogonalities -= torch.eye((self.num_prototypes // self.num_prototypes_per_class) * self.prototype_shape[-2] * self.prototype_shape[-1]).cuda()
         # num_protos * 9 * 9
@@ -410,7 +425,6 @@ class PPNet(nn.Module):
         self.set_last_layer_incorrect_connection(incorrect_strength=self.incorrect_class_connection)
 
 
-
 def construct_PPNet(base_architecture, pretrained=True, img_size=224,
                     prototype_shape=(2000, 512, 1, 1),
                     num_classes=200, topk_k=1, m=None,
@@ -437,4 +451,3 @@ def construct_PPNet(base_architecture, pretrained=True, img_size=224,
                  incorrect_class_connection=incorrect_class_connection,
                  deformable_conv_hidden_channels=deformable_conv_hidden_channels,
                  prototype_dilation=prototype_dilation)
-

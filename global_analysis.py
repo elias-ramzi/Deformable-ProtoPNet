@@ -84,6 +84,8 @@ makedir(root_dir_for_saving_test_images)
 # save prototypes in original images
 load_img_dir = os.path.join(load_model_dir, 'img')
 prototype_info = np.load(os.path.join(load_img_dir, 'epoch-'+str(start_epoch_number), 'bb'+str(start_epoch_number)+'.npy'))
+
+
 def save_prototype_original_img_with_bbox(fname, epoch, index,
                                           bbox_height_start, bbox_height_end,
                                           bbox_width_start, bbox_width_end, color=(0, 255, 255)):
@@ -97,6 +99,7 @@ def save_prototype_original_img_with_bbox(fname, epoch, index,
     else:
         print("Problem loading image for index: {}, with location: {}".format(index, os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img-original'+str(index)+'.png')))
 
+
 def save_prototype_box(fname, epoch, index):
     try:
         p_img = plt.imread(os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img-with_box'+str(index)+'.png'))
@@ -104,6 +107,7 @@ def save_prototype_box(fname, epoch, index):
     except:
         print("Problem loading image for index: {}, with location: {}".format(index, os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img-with_box'+str(index)+'.png')))
         return
+
 
 def save_def_prototype_patches(fname, epoch, index):
     for j in range(9):
@@ -113,6 +117,7 @@ def save_def_prototype_patches(fname, epoch, index):
         except:
             print("Problem loading image for index: {}, with location: {}".format(index, os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img'+str(index)+'_patch_'+str(j)+'-with_box.png')))
         return
+
 
 for j in range(ppnet.num_prototypes):
     makedir(os.path.join(root_dir_for_saving_train_images, str(j)))
@@ -135,39 +140,38 @@ for j in range(ppnet.num_prototypes):
                                           bbox_width_start=prototype_info[j][3],
                                           bbox_width_end=prototype_info[j][4],
                                           color=(0, 255, 255))
-    save_prototype_box(os.path.join(root_dir_for_saving_train_images, 
+    save_prototype_box(os.path.join(root_dir_for_saving_train_images,
                             str(j)), start_epoch_number,
                             j)
-    save_prototype_box(os.path.join(root_dir_for_saving_test_images, 
+    save_prototype_box(os.path.join(root_dir_for_saving_test_images,
                             str(j)), start_epoch_number,
                             j)
-    save_def_prototype_patches(os.path.join(root_dir_for_saving_train_images, 
-                            str(j)), start_epoch_number,
-                            j)   
-    save_def_prototype_patches(os.path.join(root_dir_for_saving_test_images, 
+    save_def_prototype_patches(os.path.join(root_dir_for_saving_train_images,
                             str(j)), start_epoch_number,
                             j)
-
+    save_def_prototype_patches(os.path.join(root_dir_for_saving_test_images,
+                            str(j)), start_epoch_number,
+                            j)
 
 
 num_nearest_neighbors = 5
 
 find_nearest.find_k_nearest_patches_to_prototypes(
-        dataloader=train_loader, # pytorch dataloader (must be unnormalized in [0,1])
-        prototype_network_parallel=ppnet_multi, # pytorch network with prototype_vectors
-        num_nearest_neighbors=num_nearest_neighbors,
-        preprocess_input_function=preprocess_input_function, # normalize if needed
-        full_save=False,
-        deformable=True,
-        root_dir_for_saving_images=root_dir_for_saving_train_images,
-        log=print)
+    dataloader=train_loader,  # pytorch dataloader (must be unnormalized in [0,1])
+    prototype_network_parallel=ppnet_multi,  # pytorch network with prototype_vectors
+    num_nearest_neighbors=num_nearest_neighbors,
+    preprocess_input_function=preprocess_input_function,  # normalize if needed
+    full_save=False,
+    deformable=True,
+    root_dir_for_saving_images=root_dir_for_saving_train_images,
+    log=print)
 
 find_nearest.find_k_nearest_patches_to_prototypes(
-        dataloader=test_loader, # pytorch dataloader (must be unnormalized in [0,1])
-        prototype_network_parallel=ppnet_multi, # pytorch network with prototype_vectors
-        num_nearest_neighbors=num_nearest_neighbors,
-        preprocess_input_function=preprocess_input_function, # normalize if needed
-        full_save=False,
-        deformable=True,
-        root_dir_for_saving_images=root_dir_for_saving_test_images,
-        log=print)
+    dataloader=test_loader,  # pytorch dataloader (must be unnormalized in [0,1])
+    prototype_network_parallel=ppnet_multi,  # pytorch network with prototype_vectors
+    num_nearest_neighbors=num_nearest_neighbors,
+    preprocess_input_function=preprocess_input_function,  # normalize if needed
+    full_save=False,
+    deformable=True,
+    root_dir_for_saving_images=root_dir_for_saving_test_images,
+    log=print)

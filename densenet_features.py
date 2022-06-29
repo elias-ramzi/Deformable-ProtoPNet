@@ -23,8 +23,7 @@ class _DenseLayer(nn.Sequential):
         super(_DenseLayer, self).__init__()
         self.add_module('norm1', nn.BatchNorm2d(num_input_features)),
         self.add_module('relu1', nn.ReLU(inplace=True)),
-        self.add_module('conv1', nn.Conv2d(num_input_features, bn_size *
-                        growth_rate, kernel_size=1, stride=1, bias=False)),
+        self.add_module('conv1', nn.Conv2d(num_input_features, bn_size * growth_rate, kernel_size=1, stride=1, bias=False)),
         self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate)),
         self.add_module('relu2', nn.ReLU(inplace=True)),
         self.add_module('conv2', nn.Conv2d(bn_size * growth_rate, growth_rate,
@@ -78,7 +77,7 @@ class _Transition(nn.Sequential):
         self.add_module('relu', nn.ReLU(inplace=True))
         self.add_module('conv', nn.Conv2d(num_input_features, num_output_features,
                                           kernel_size=1, stride=1, bias=False))
-        self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2)) # AvgPool2d has no padding
+        self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))  # AvgPool2d has no padding
 
     def block_conv_info(self):
         return [1, 2], [1, 2], [0, 0]
@@ -182,8 +181,7 @@ def densenet121_features(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = DenseNet_features(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16),
-                     **kwargs)
+    model = DenseNet_features(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16), **kwargs)
     # '.'s are no longer allowed in module names, but pervious _DenseLayer
     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
     # They are also in the checkpoints in model_urls. This pattern is used
@@ -218,8 +216,7 @@ def densenet169_features(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = DenseNet_features(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32),
-                     **kwargs)
+    model = DenseNet_features(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32), **kwargs)
     if pretrained:
         # '.'s are no longer allowed in module names, but pervious _DenseLayer
         # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
@@ -255,8 +252,7 @@ def densenet201_features(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = DenseNet_features(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32),
-                     **kwargs)
+    model = DenseNet_features(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32), **kwargs)
     if pretrained:
         # '.'s are no longer allowed in module names, but pervious _DenseLayer
         # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
@@ -293,9 +289,8 @@ def densenet161_features(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = DenseNet_features(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24),
-                     **kwargs)
-    
+    model = DenseNet_features(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24), **kwargs)
+
     if pretrained:
         # '.'s are no longer allowed in module names, but pervious _DenseLayer
         # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
@@ -303,7 +298,6 @@ def densenet161_features(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-
 
         state_dict = model_zoo.load_url(model_urls['densenet161'], model_dir=model_dir)
         for key in list(state_dict.keys()):
@@ -320,12 +314,12 @@ def densenet161_features(pretrained=False, **kwargs):
                 state_dict[new_key] = state_dict[key]
                 del state_dict[key]
 
-
         del state_dict['classifier.weight']
         del state_dict['classifier.bias']
         model.load_state_dict(state_dict)
 
     return model
+
 
 if __name__ == '__main__':
 

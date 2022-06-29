@@ -58,7 +58,7 @@ print("deformable_conv_hidden_channels: {}".format(deformable_conv_hidden_channe
 np.random.seed(rand_seed)
 torch.manual_seed(rand_seed)
 print("Random seed: ", rand_seed)
-    
+
 print(os.environ['CUDA_VISIBLE_DEVICES'])
 
 from settings import img_size, experiment_run, base_architecture
@@ -177,7 +177,7 @@ ppnet = model.construct_PPNet(base_architecture=base_architecture,
                             incorrect_class_connection=incorrect_class_connection,
                             deformable_conv_hidden_channels=deformable_conv_hidden_channels,
                             prototype_dilation=2)
-    
+
 ppnet = ppnet.cuda()
 ppnet_multi = torch.nn.DataParallel(ppnet)
 class_specific = True
@@ -186,12 +186,12 @@ class_specific = True
 from settings import joint_optimizer_lrs, joint_lr_step_size
 if 'resnet152' in base_architecture and 'stanford_dogs' in train_dir:
     joint_optimizer_lrs['features'] = 1e-5
-joint_optimizer_specs = \
-[{'params': ppnet.features.parameters(), 'lr': joint_optimizer_lrs['features'], 'weight_decay': 1e-3}, # bias are now also being regularized
- {'params': ppnet.add_on_layers.parameters(), 'lr': joint_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
- {'params': ppnet.prototype_vectors, 'lr': joint_optimizer_lrs['prototype_vectors']},
- {'params': ppnet.conv_offset.parameters(), 'lr': joint_optimizer_lrs['conv_offset']},
- {'params': ppnet.last_layer.parameters(), 'lr': joint_optimizer_lrs['joint_last_layer_lr']}
+joint_optimizer_specs = [
+    {'params': ppnet.features.parameters(), 'lr': joint_optimizer_lrs['features'], 'weight_decay': 1e-3},  # bias are now also being regularized
+    {'params': ppnet.add_on_layers.parameters(), 'lr': joint_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
+    {'params': ppnet.prototype_vectors, 'lr': joint_optimizer_lrs['prototype_vectors']},
+    {'params': ppnet.conv_offset.parameters(), 'lr': joint_optimizer_lrs['conv_offset']},
+    {'params': ppnet.last_layer.parameters(), 'lr': joint_optimizer_lrs['joint_last_layer_lr']}
 ]
 joint_optimizer = torch.optim.Adam(joint_optimizer_specs)
 joint_lr_scheduler = torch.optim.lr_scheduler.StepLR(joint_optimizer, step_size=joint_lr_step_size, gamma=0.2)
@@ -199,9 +199,9 @@ log("joint_optimizer_lrs: ")
 log(str(joint_optimizer_lrs))
 
 from settings import warm_optimizer_lrs
-warm_optimizer_specs = \
-[{'params': ppnet.add_on_layers.parameters(), 'lr': warm_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
- {'params': ppnet.prototype_vectors, 'lr': warm_optimizer_lrs['prototype_vectors']},
+warm_optimizer_specs = [
+    {'params': ppnet.add_on_layers.parameters(), 'lr': warm_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
+    {'params': ppnet.prototype_vectors, 'lr': warm_optimizer_lrs['prototype_vectors']},
 ]
 warm_optimizer = torch.optim.Adam(warm_optimizer_specs)
 log("warm_optimizer_lrs: ")
@@ -210,10 +210,10 @@ log(str(warm_optimizer_lrs))
 from settings import warm_pre_offset_optimizer_lrs
 if 'resnet152' in base_architecture and 'stanford_dogs' in train_dir:
     warm_pre_offset_optimizer_lrs['features'] = 1e-5
-warm_pre_offset_optimizer_specs = \
-[{'params': ppnet.add_on_layers.parameters(), 'lr': warm_pre_offset_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
- {'params': ppnet.prototype_vectors, 'lr': warm_pre_offset_optimizer_lrs['prototype_vectors']},
- {'params': ppnet.features.parameters(), 'lr': warm_pre_offset_optimizer_lrs['features'], 'weight_decay': 1e-3},
+warm_pre_offset_optimizer_specs = [
+    {'params': ppnet.add_on_layers.parameters(), 'lr': warm_pre_offset_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
+    {'params': ppnet.prototype_vectors, 'lr': warm_pre_offset_optimizer_lrs['prototype_vectors']},
+    {'params': ppnet.features.parameters(), 'lr': warm_pre_offset_optimizer_lrs['features'], 'weight_decay': 1e-3},
 ]
 warm_pre_offset_optimizer = torch.optim.Adam(warm_pre_offset_optimizer_specs)
 
@@ -289,11 +289,10 @@ for epoch in range(num_train_epochs):
             for i in range(20):
                 log('iteration: \t{0}'.format(i))
                 _ = tnt.train(model=ppnet_multi, dataloader=train_loader, optimizer=last_layer_optimizer,
-                            class_specific=class_specific, coefs=coefs, log=log, 
+                            class_specific=class_specific, coefs=coefs, log=log,
                             subtractive_margin=subtractive_margin)
                 accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                                 class_specific=class_specific, log=log)
                 save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + '_' + str(i) + 'push', accu=accu,
                                             target_accu=0.70, log=log)
 logclose()
-

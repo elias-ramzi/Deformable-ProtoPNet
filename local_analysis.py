@@ -121,7 +121,7 @@ if np.sum(prototype_max_connection == prototype_img_identity) == ppnet.num_proto
     log('All prototypes connect most strongly to their respective classes.')
 else:
     log('WARNING: Not all prototypes connect most strongly to their respective classes.')
-        
+
 ##### HELPER FUNCTIONS FOR PLOTTING
 def save_preprocessed_img(fname, preprocessed_imgs, index=0):
     img_copy = copy.deepcopy(preprocessed_imgs[index:index+1])
@@ -130,9 +130,10 @@ def save_preprocessed_img(fname, preprocessed_imgs, index=0):
     undo_preprocessed_img = undo_preprocessed_img[0]
     undo_preprocessed_img = undo_preprocessed_img.detach().cpu().numpy()
     undo_preprocessed_img = np.transpose(undo_preprocessed_img, [1,2,0])
-    
+
     plt.imsave(fname, undo_preprocessed_img)
     return undo_preprocessed_img
+
 
 def save_prototype(fname, epoch, index):
     try:
@@ -141,12 +142,14 @@ def save_prototype(fname, epoch, index):
     except:
         print("Problem loading ", os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img'+str(index)+'.png'))
 
+
 def save_prototype_box(fname, epoch, index):
     try:
         p_img = plt.imread(os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img-with_box'+str(index)+'.png'))
         plt.imsave(fname, p_img)
     except:
         print("Problem loading ", os.path.join(load_img_dir, 'epoch-'+str(epoch), 'prototype-img-with_box'+str(index)+'.png'))
+
 
 def imsave_with_bbox(fname, img_rgb, bbox_height_start, bbox_height_end,
                      bbox_width_start, bbox_width_end, color=(0, 255, 255)):
@@ -160,7 +163,8 @@ def imsave_with_bbox(fname, img_rgb, bbox_height_start, bbox_height_end,
     except:
         print("Problem loading: imsave with bbox")
 
-def save_deform_info(model, offsets, input, activations, 
+
+def save_deform_info(model, offsets, input, activations,
                     save_dir,
                     prototype_img_filename_prefix,
                     proto_index):
@@ -202,7 +206,7 @@ def save_deform_info(model, offsets, input, activations,
             def_image_space_row_end = int((1 + def_latent_space_row) * original_img_size / activations.shape[-2])
             def_image_space_col_start = int(def_latent_space_col * original_img_size / activations.shape[-1])
             def_image_space_col_end = int((1 + def_latent_space_col) * original_img_size / activations.shape[-1])
- 
+
             img_with_just_this_box = input.copy()
             cv2.rectangle(img_with_just_this_box,(def_image_space_col_start, def_image_space_row_start),
                                                     (def_image_space_col_end, def_image_space_row_end),
@@ -218,8 +222,8 @@ def save_deform_info(model, offsets, input, activations,
                                                     (def_image_space_col_end, def_image_space_row_end),
                                                     colors[i*prototype_shape[-1] + k],
                                                     1)
-            
-            if not (def_image_space_col_start < 0 
+
+            if not (def_image_space_col_start < 0
                 or def_image_space_row_start < 0
                 or def_image_space_col_end >= input.shape[0]
                 or def_image_space_row_end >= input.shape[1]):
@@ -228,7 +232,7 @@ def save_deform_info(model, offsets, input, activations,
                     input[def_image_space_row_start:def_image_space_row_end, def_image_space_col_start:def_image_space_col_end, :],
                     vmin=0.0,
                     vmax=1.0)
-            
+
     plt.imsave(os.path.join(save_dir,
                             prototype_img_filename_prefix + str(proto_index) + '-with_box.png'),
                 original_img_j_with_boxes,
@@ -288,13 +292,13 @@ for i in range(1,11):
         log('prototype connection identity: {0}'.format(prototype_max_connection[sorted_indices_act[-i].item()]))
     log('activation value (similarity score): {0}'.format(array_act[-i]))
     log('last layer connection with predicted class: {0}'.format(ppnet.last_layer.weight[predicted_cls][sorted_indices_act[-i].item()]))
-    
+
     activation_pattern = prototype_activation_patterns[idx][sorted_indices_act[-i].item()].detach().cpu().numpy()
     upsampled_activation_pattern = cv2.resize(activation_pattern, dsize=(img_size, img_size),
                                               interpolation=cv2.INTER_CUBIC)
-    
 
-    save_deform_info(model=ppnet, offsets=offsets, 
+
+    save_deform_info(model=ppnet, offsets=offsets,
                         input=original_img, activations=activation_pattern,
                         save_dir=os.path.join(save_analysis_path, 'most_activated_prototypes'),
                         prototype_img_filename_prefix='top-%d_activated_prototype_' % i,
@@ -316,7 +320,7 @@ for i in range(1,11):
                      bbox_height_end=high_act_patch_indices[1],
                      bbox_width_start=high_act_patch_indices[2],
                      bbox_width_end=high_act_patch_indices[3], color=(0, 255, 255))
-    
+
     # show the image overlayed with prototype activation map
     rescaled_activation_pattern = upsampled_activation_pattern - np.amin(upsampled_activation_pattern)
     rescaled_activation_pattern = rescaled_activation_pattern / np.amax(rescaled_activation_pattern)
@@ -357,17 +361,17 @@ for i,c in enumerate(topk_classes.detach().cpu().numpy()):
             log('prototype connection identity: {0}'.format(prototype_max_connection[prototype_index]))
         log('activation value (similarity score): {0}'.format(prototype_activations[idx][prototype_index]))
         log('last layer connection: {0}'.format(ppnet.last_layer.weight[c][prototype_index]))
-        
+
         activation_pattern = prototype_activation_patterns[idx][prototype_index].detach().cpu().numpy()
         upsampled_activation_pattern = cv2.resize(activation_pattern, dsize=(img_size, img_size),
                                                   interpolation=cv2.INTER_CUBIC)
 
-        save_deform_info(model=ppnet, offsets=offsets, 
+        save_deform_info(model=ppnet, offsets=offsets,
                         input=original_img, activations=activation_pattern,
                         save_dir=os.path.join(save_analysis_path, 'top-%d_class_prototypes' % (i+1)),
                         prototype_img_filename_prefix='top-%d_activated_prototype_' % prototype_cnt,
                         proto_index=prototype_index)
-        
+
         # show the most highly activated patch of the image by this prototype
         high_act_patch_indices = find_high_activation_crop(upsampled_activation_pattern)
         high_act_patch = original_img[high_act_patch_indices[0]:high_act_patch_indices[1],
@@ -384,13 +388,13 @@ for i,c in enumerate(topk_classes.detach().cpu().numpy()):
                          bbox_height_end=high_act_patch_indices[1],
                          bbox_width_start=high_act_patch_indices[2],
                          bbox_width_end=high_act_patch_indices[3], color=(0, 255, 255))
-        
+
         # show the image overlayed with prototype activation map
         rescaled_activation_pattern = upsampled_activation_pattern - np.amin(upsampled_activation_pattern)
         rescaled_activation_pattern = rescaled_activation_pattern / np.amax(rescaled_activation_pattern)
         heatmap = cv2.applyColorMap(np.uint8(255*rescaled_activation_pattern), cv2.COLORMAP_JET)
         heatmap = np.float32(heatmap) / 255
-        heatmap = heatmap[...,::-1]
+        heatmap = heatmap[..., ::-1]
         overlayed_img = 0.5 * original_img + 0.3 * heatmap
         log('prototype activation map of the chosen image:')
         plt.imsave(os.path.join(save_analysis_path, 'top-%d_class_prototypes' % (i+1),
@@ -406,4 +410,3 @@ else:
     log('Prediction is wrong.')
 
 logclose()
-

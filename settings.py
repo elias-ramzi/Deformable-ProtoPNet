@@ -6,8 +6,8 @@ experiment_run = '001'
 # Full set: './datasets/CUB_200_2011/'
 # Cropped set: './datasets/cub200_cropped/'
 # Stanford dogs: './datasets/stanford_dogs/'
-data_path = './datasets/CUB_200_2011/'
-#120 classes in stanford_dogs, 200 in CUB_200_2011
+data_path = '/local/DEEPLEARNING/image_retrieval/CUB_200_2011/'
+# 120 classes in stanford_dogs, 200 in CUB_200_2011
 if 'stanford_dogs' in data_path:
     num_classes = 120
 else:
@@ -32,13 +32,17 @@ joint_lr_step_size = 5
 warm_optimizer_lrs = {'add_on_layers': 3e-3,
                       'prototype_vectors': 3e-3}
 
-warm_pre_offset_optimizer_lrs = {'add_on_layers': 3e-3,
-                      'prototype_vectors': 3e-3,
-                      'features': 1e-4}
+warm_pre_offset_optimizer_lrs = {
+    'add_on_layers': 3e-3,
+    'prototype_vectors': 3e-3,
+    'features': 1e-4,
+}
 
-warm_pre_prototype_optimizer_lrs = {'add_on_layers': 3e-3,
-                      'conv_offset': 3e-3,
-                      'features': 1e-4}
+warm_pre_prototype_optimizer_lrs = {
+    'add_on_layers': 3e-3,
+    'conv_offset': 3e-3,
+    'features': 1e-4,
+}
 
 last_layer_optimizer_lr = 1e-4
 last_layer_fixed = True

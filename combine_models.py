@@ -12,13 +12,14 @@ import time
 from preprocess import mean, std
 from settings import joint_optimizer_lrs, joint_lr_step_size
 
+
 class PPNet_ensemble(nn.Module):
-    
+
     def __init__(self, ppnets):
-        
+
         super(PPNet_ensemble, self).__init__()
-        self.ppnets = ppnets # a list of ppnets
-    
+        self.ppnets = ppnets  # a list of ppnets
+
     def forward(self, x):
         logits, min_distances_0 = self.ppnets[0](x)
         min_distances = [min_distances_0]
@@ -43,7 +44,7 @@ def _train_or_test_ppnet_ensemble(model, dataloader, optimizer=None, class_speci
     n_correct = 0
     n_batches = 0
     total_cross_entropy = 0
-    
+
     for i, (image, label) in enumerate(dataloader):
         input = image.cuda()
         target = label.cuda()
@@ -82,19 +83,17 @@ def _train_or_test_ppnet_ensemble(model, dataloader, optimizer=None, class_speci
 
             n_batches += 1
             total_cross_entropy += cross_entropy.item()
-            
+
         # compute gradient and do SGD step
         if is_train:
             if class_specific:
                 if coefs is not None:
-                    loss = (coefs['crs_ent'] * cross_entropy
-                          + coefs['l1'] * l1)
+                    loss = (coefs['crs_ent'] * cross_entropy + coefs['l1'] * l1)
                 else:
                     loss = cross_entropy + 1e-4 * l1
             else:
                 if coefs is not None:
-                    loss = (coefs['crs_ent'] * cross_entropy
-                          + coefs['l1'] * l1)
+                    loss = (coefs['crs_ent'] * cross_entropy + coefs['l1'] * l1)
                 else:
                     loss = cross_entropy + 1e-4 * l1
             optimizer.zero_grad()
@@ -105,7 +104,7 @@ def _train_or_test_ppnet_ensemble(model, dataloader, optimizer=None, class_speci
 
     end = time.time()
 
-    log('\ttime: \t{0}'.format(end -  start))
+    log('\ttime: \t{0}'.format(end - start))
     log('\tcross ent: \t{0}'.format(total_cross_entropy / n_batches))
     log('\taccu: \t\t{0}%'.format(n_correct / n_examples * 100))
     last_layer_p1_norm = 0
@@ -115,9 +114,10 @@ def _train_or_test_ppnet_ensemble(model, dataloader, optimizer=None, class_speci
 
     return n_correct / n_examples
 
+
 def train_ensemble(model, dataloader, optimizer, class_specific=True, coefs=None, log=print):
     assert(optimizer is not None)
-    
+
     log('\ttrain')
     model.train()
     return _train_or_test_ppnet_ensemble(model=model, dataloader=dataloader, optimizer=optimizer,
@@ -140,7 +140,8 @@ def ensemble_last_only(model, log=print):
         ppnet.prototype_vectors.requires_grad = False
         for p in ppnet.last_layer.parameters():
             p.requires_grad = True
-    log('\tensemble last layer')            
+    log('\tensemble last layer')
+
 
 ##### MODEL AND DATA LOADING
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -153,7 +154,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 load_model_paths = ['./saved_models/densenet121/003/30_18push0.7901.pth',
                     './saved_models/resnet50/002/30_19push0.8640.pth',
                     './saved_models/vgg19/003/30_18push0.7600.pth']
-                  
+
 load_model_paths = list(load_model_paths)
 ppnets = []
 epoch_number_strs = []
@@ -163,7 +164,7 @@ for load_model_path in load_model_paths:
     load_model_name = load_model_path.split('/')[-1]
     epoch_number_str = re.search(r'\d+', load_model_name).group(0)
     epoch_number_strs.append(epoch_number_str)
-    
+
     start_epoch_number = int(epoch_number_str)
     start_epoch_numbers.append(start_epoch_number)
 
@@ -218,28 +219,29 @@ class_specific = True
 
 optimizer_specs = []
 for ppnet in ppnet_ensemble_multi.module.ppnets:
-    optimizer_specs = optimizer_specs + [{'params': ppnet.features.parameters(), 'lr': joint_optimizer_lrs['features'], 'weight_decay': 1e-3}, # bias are now also being regularized
-    {'params': ppnet.add_on_layers.parameters(), 'lr': joint_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
-    {'params': ppnet.prototype_vectors, 'lr': 0},
-    {'params': ppnet.conv_offset.parameters(), 'lr': joint_optimizer_lrs['conv_offset']},
-    {'params': ppnet.last_layer.parameters(), 'lr': 1e-4}
+    optimizer_specs = optimizer_specs + [
+        {'params': ppnet.features.parameters(), 'lr': joint_optimizer_lrs['features'], 'weight_decay': 1e-3},  # bias are now also being regularized
+        {'params': ppnet.add_on_layers.parameters(), 'lr': joint_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
+        {'params': ppnet.prototype_vectors, 'lr': 0},
+        {'params': ppnet.conv_offset.parameters(), 'lr': joint_optimizer_lrs['conv_offset']},
+        {'params': ppnet.last_layer.parameters(), 'lr': 1e-4}
     ]
 optimizer = torch.optim.Adam(optimizer_specs)
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=joint_lr_step_size, gamma=0.1)
 
-#check test accuracy
-accu = test_ensemble(model=ppnet_ensemble_multi, dataloader=test_loader,
-                    class_specific=class_specific, log=print)
+# check test accuracy
+accu = test_ensemble(
+    model=ppnet_ensemble_multi, dataloader=test_loader,
+    class_specific=class_specific, log=print)
 for i in range(0):
     print("Epoch {}".format(i))
     ensemble_last_only(model=ppnet_ensemble_multi, log=print)
-    train_ensemble(model=ppnet_ensemble_multi, dataloader=train_loader, optimizer=optimizer,
-                        class_specific=class_specific, log=print)
-    #check test accuracy
-    accu = test_ensemble(model=ppnet_ensemble_multi, dataloader=test_loader,
-                        class_specific=class_specific, log=print)
+    train_ensemble(
+        model=ppnet_ensemble_multi, dataloader=train_loader, optimizer=optimizer,
+        class_specific=class_specific, log=print)
+    # check test accuracy
+    accu = test_ensemble(
+        model=ppnet_ensemble_multi, dataloader=test_loader,
+        class_specific=class_specific, log=print)
     if (i + 1) % 10 == 0:
         lr_scheduler.step()
-
-
-

@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-from torchsummary import summary
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -11,9 +10,10 @@ model_urls = {
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
-#'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+# 'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
 
 model_dir = './pretrained_models'
+
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -216,16 +216,18 @@ class ResNet_features(nn.Module):
         of bypass layers
         '''
 
-        return (self.block.num_layers * self.layers[0]
-              + self.block.num_layers * self.layers[1]
-              + self.block.num_layers * self.layers[2]
-              + self.block.num_layers * self.layers[3]
-              + 1)
-
+        return (
+            self.block.num_layers * self.layers[0]
+            + self.block.num_layers * self.layers[1]
+            + self.block.num_layers * self.layers[2]
+            + self.block.num_layers * self.layers[3]
+            + 1
+        )
 
     def __repr__(self):
         template = 'resnet{}_features'
         return template.format(self.num_layers() + 1)
+
 
 def resnet18_features(pretrained=False, **kwargs):
     """Constructs a ResNet-18 model.
@@ -267,11 +269,11 @@ def resnet50_features(pretrained=False, inat=True, **kwargs):
             my_dict = torch.load(model_dir + '/' + 'BBN.iNaturalist2017.res50.90epoch.best_model.pth')
         else:
             my_dict = torch.load(model_dir + '/' + 'resnet50-0676ba61.pth')
-        
+
         my_dict.pop('module.classifier.weight')
         my_dict.pop('module.classifier.bias')
         for key in list(my_dict.keys()):
-            my_dict[key.replace('module.backbone.', '').replace('cb_block', 'layer4.2').replace('rb_block','layer4.3' )] = my_dict.pop(key)
+            my_dict[key.replace('module.backbone.', '').replace('cb_block', 'layer4.2').replace('rb_block', 'layer4.3')] = my_dict.pop(key)
         model.load_state_dict(my_dict, strict=True)
 
     return model
