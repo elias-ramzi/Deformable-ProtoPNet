@@ -37,6 +37,7 @@ start_epoch_number = int(epoch_number_str)
 print('Load model from ' + load_model_path)
 print('start_epoch_number: ', start_epoch_number)
 ppnet = torch.load(load_model_path)
+import ipdb; ipdb.set_trace()
 ppnet = ppnet.cuda()
 ppnet_multi = torch.nn.DataParallel(ppnet)
 

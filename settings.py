@@ -1,7 +1,7 @@
 base_architecture = 'resnet50'
 img_size = 224
 
-experiment_run = '001'
+experiment_run = 'non-deformable'
 
 # Full set: './datasets/CUB_200_2011/'
 # Cropped set: './datasets/cub200_cropped/'
